@@ -180,7 +180,7 @@ class OsmConflator:
 
         if sp is not None:
             if p is None:
-                p = OSMPoint('node', -1-len(self.matched), 1, sp.lat, sp.lon, sp.tags)
+                p = OSMPoint('node', -1-len(self.matched), 1, sp.lat, sp.lon, tags = sp.tags)
                 p.action = 'create'
             else:
                 master_tags = set(self.profile.get('master_tags', []))
@@ -428,11 +428,20 @@ class OsmConflator:
                 etree.SubElement(changeset, 'tag', k=k, v=v)
         for osmel in self.matched:
             if osmel.action is not None:
+                #TODO understand why .to_xml() doesn't add user, uid and changeset
                 el = osmel.to_xml()
                 if josm:
                     if osmel.action == 'create':
                         el.set('id', str(neg_id))
                         neg_id -= 1
+                    elif osmel.action == 'modify':
+                        #These informations are needed in a josm file if
+                        #you want to see the difference with ctrl+H before uploading
+                        #the modified data
+                        el.set('action', osmel.action)
+                        el.set('uid', osmel.uid)
+                        el.set('user', osmel.user)
+                        el.set('changeset', osmel.changeset)
                     else:
                         el.set('action', osmel.action)
                     osc.append(el)
